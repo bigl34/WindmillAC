@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This Windmill device is already configured.",
+      "reauth_successful": "Authentication was updated successfully.",
+      "reconfigure_successful": "Configuration was updated successfully."
+    },
+    "error": {
+      "already_configured": "This token is already used by another Windmill device.",
+      "cannot_connect": "Unable to connect to Windmill.",
+      "invalid_auth": "The Windmill token was rejected.",
+      "invalid_response": "Windmill returned an unsupported response."
+    },
+    "step": {
+      "reauth_confirm": {
+        "data": {
+          "token": "Device token"
+        },
+        "description": "Enter a valid token for this Windmill device.",
+        "title": "Reauthenticate Windmill AC"
+      },
+      "reconfigure": {
+        "data": {
+          "token": "Device token"
+        },
+        "description": "Replace the token used by this Windmill device.",
+        "title": "Reconfigure Windmill AC"
+      },
+      "user": {
+        "data": {
+          "token": "Device token"
+        },
+        "description": "Enter the device token shown by Windmill.",
+        "title": "Add Windmill AC"
+      }
+    }
+  }
+}

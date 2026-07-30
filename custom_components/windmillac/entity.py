@@ -1,129 +1,106 @@
-import logging
+"""Climate entity backed by the Windmill coordinator."""
+
+from __future__ import annotations
+
+from typing import Any
+
 from homeassistant.components.climate import ClimateEntity, ClimateEntityDescription
-from homeassistant.components.climate.const import HVACMode, ClimateEntityFeature
-from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-
-_LOGGER = logging.getLogger(__name__)
-_LOGGER.setLevel(logging.DEBUG)
+from .coordinator import WindmillDataUpdateCoordinator
 
 
-class WindmillClimate(CoordinatorEntity, ClimateEntity):
+class WindmillClimate(
+    CoordinatorEntity[WindmillDataUpdateCoordinator],
+    ClimateEntity,
+):
     """Representation of a Windmill Climate device."""
 
-    def __init__(self, coordinator, entity_description: ClimateEntityDescription):
+    _attr_has_entity_name = True
+    _attr_temperature_unit = UnitOfTemperature.FAHRENHEIT
+    _attr_supported_features = (
+        ClimateEntityFeature.TARGET_TEMPERATURE
+        | ClimateEntityFeature.FAN_MODE
+        | ClimateEntityFeature.TURN_ON
+        | ClimateEntityFeature.TURN_OFF
+    )
+    _enable_turn_on_off_backwards_compatibility = False
+
+    def __init__(
+        self,
+        coordinator: WindmillDataUpdateCoordinator,
+        entry_id: str,
+        entity_description: ClimateEntityDescription,
+    ) -> None:
         """Initialize the climate device."""
         super().__init__(coordinator)
         self.entity_description = entity_description
-        self._attr_name = "Windmill Climate"
-        self._attr_temperature_unit = UnitOfTemperature.FAHRENHEIT
-        self._attr_unique_id = f"{DOMAIN}_{coordinator.blynk_service.token}_{entity_description.key}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.unique_id)},
-            name= "Windmill AC",
-            manufacturer="Windmill"
-        )
-        self._attr_supported_features = (
-            ClimateEntityFeature.TARGET_TEMPERATURE |
-            ClimateEntityFeature.FAN_MODE |
-            ClimateEntityFeature.TURN_ON |
-            ClimateEntityFeature.TURN_OFF
-        )
-        self._attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.AUTO, HVACMode.FAN_ONLY]
+        self._attr_hvac_modes = [
+            HVACMode.OFF,
+            HVACMode.COOL,
+            HVACMode.AUTO,
+            HVACMode.FAN_ONLY,
+        ]
         self._attr_fan_modes = ["Low", "Medium", "High", "Auto"]
-        self._hvac_mode = coordinator.data.get("mode")
-        self._target_temperature = None
-        self._fan_mode = None
-        self._is_on = False
-        self._enable_turn_on_off_backwards_compatibility = False
-        _LOGGER.debug(f"Setup WindmillClimate entity: {self.entity_description.name}")
+        self._attr_unique_id = f"{entry_id}-climate"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name="Windmill AC",
+            manufacturer="Windmill",
+        )
 
     @property
-    def unique_id(self):
-        """Return a unique ID for the entity."""
-        return f"{DOMAIN}_{self.coordinator.blynk_service.token}_{self.entity_description.key}"
-
-    @property
-    def name(self):
-        """Return the name of the entity."""
-        return self.entity_description.name
-
-    @property
-    def current_temperature(self):
+    def current_temperature(self) -> float:
         """Return the current temperature."""
-        _LOGGER.debug("current_temperature property called")
-        return self.coordinator.data.get("current_temp")
+        return self.coordinator.data.snapshot.current_temperature
 
     @property
-    def target_temperature(self):
+    def target_temperature(self) -> float:
         """Return the temperature we try to reach."""
-        return self.coordinator.data.get("target_temp")
+        return self.coordinator.data.snapshot.target_temperature
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> HVACMode:
         """Return current operation mode."""
-        _LOGGER.debug("hvac_mode property called")
-        mode = self.coordinator.data.get("mode")
-        _LOGGER.debug(f"mode {mode}")
-        return self.coordinator.data.get("mode")
+        return self.coordinator.data.snapshot.hvac_mode
 
     @property
-    def fan_mode(self):
+    def fan_mode(self) -> str:
         """Return the fan setting."""
-        return self.coordinator.data.get("fan")
+        return self.coordinator.data.snapshot.fan_mode
 
     @property
-    def is_on(self):
-        return self.coordinator.data.get("power")
+    def is_on(self) -> bool:
+        """Return whether the appliance is powered."""
+        return self.coordinator.data.snapshot.power
 
-    async def async_set_temperature(self, **kwargs):
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose when state is cached after a transient read failure."""
+        return {"stale": self.coordinator.data.stale}
+
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is not None:
-            await self.coordinator.blynk_service.async_set_target_temp(temperature)
-            await self.coordinator.async_request_refresh()
+            await self.coordinator.async_set_target_temperature(temperature)
 
-    async def async_set_hvac_mode(self, hvac_mode):
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new operation mode."""
-        if hvac_mode != HVACMode.OFF:
-            if not self.coordinator.data.get("power"):
-                await self.async_turn_on()
-            await self.coordinator.blynk_service.async_set_mode(hvac_mode)
-        else:
-            await self.async_turn_off()
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_set_hvac_mode(hvac_mode)
 
-    async def async_set_fan_mode(self, fan_mode):
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new fan mode."""
-        await self.coordinator.blynk_service.async_set_fan(fan_mode)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_set_fan_mode(fan_mode)
 
-    async def async_turn_on(self):
+    async def async_turn_on(self) -> None:
         """Turn on the device."""
-        await self.coordinator.blynk_service.async_set_power(True)
-        await self.coordinator.async_request_refresh()
-        self.async_write_ha_state()
+        await self.coordinator.async_set_power(True)
 
-    async def async_turn_off(self):
+    async def async_turn_off(self) -> None:
         """Turn off the device."""
-        await self.coordinator.blynk_service.async_set_power(False)
-        await self.coordinator.async_request_refresh()
-        self.async_write_ha_state()
-
-    async def async_update(self):
-        """Update the climate entity."""
-        _LOGGER.debug("Executing async_update in WindmillClimate")
-        await super().async_update()
-        self._attr_target_temperature = self.coordinator.data.get("target_temp")
-        self._attr_current_temperature = self.coordinator.data.get("current_temp")
-        self._attr_hvac_mode = self.coordinator.data.get("mode")
-        self._attr_fan_mode = self.coordinator.data.get("fan")
-        self._attr_is_on = self.coordinator.data.get("power")
-        _LOGGER.debug(f"Updated target temperature: {self._attr_target_temperature}")
-        _LOGGER.debug(f"Updated current temperature: {self._attr_current_temperature}")
-        _LOGGER.debug(f"Updated HVAC mode: {self._attr_hvac_mode}")
-        _LOGGER.debug(f"Updated fan mode: {self._attr_fan_mode}")
-        _LOGGER.debug(f"Updated power state: {self._attr_is_on}")
+        await self.coordinator.async_set_power(False)

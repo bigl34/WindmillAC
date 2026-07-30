@@ -28,7 +28,7 @@ HACS is the Home Assistant Community Store that allows you to easily install cus
 3. Click the **three dots menu** (⋮) in the top right corner
 4. Select **Custom repositories**
 5. In the dialog that opens:
-   - **Repository URL**: `https://github.com/bzellman/WindmillAC`
+   - **Repository URL**: `https://github.com/bigl34/WindmillAC`
    - **Category**: Select "Integration"
 6. Click **Add**
 
@@ -89,6 +89,17 @@ If clicking on the Auth Token doesn't copy it (like it says it will) try one of 
 - Check that your Windmill AC is online and connected to Wi-Fi
 - Try reloading the integration: Settings → Devices & Services → WindmillAC → three dots → Reload
 
+**Stale state:**
+- One temporary read failure after a successful update keeps the last known state
+  available and adds the `stale: true` state attribute.
+- A second consecutive failure marks the entity unavailable. A successful update
+  clears the failure count and the stale attribute.
+
+**Changing a token:**
+- Use the integration's **Reconfigure** action. If Windmill rejects a token, Home
+  Assistant automatically starts the linked reauthentication flow.
+- A token is validated before it is saved and cannot be assigned to two entries.
+
 **Error Failed to get pin value for V1**
 
 This might occur if something wasn't right the first time you added the device. Try adding a second device (step 5 above) and then if that works, delete the one throwing the error afterward. 
@@ -99,6 +110,16 @@ This is a community-maintained integration (v1). The developer welcomes communit
 
 ## Disclaimer
 ## Notes / Changelog
+
+2026-07: Version 1.1.0 moves all cloud access to Home Assistant's shared
+asynchronous HTTP session, adds bounded read retries and stale-state handling,
+and migrates existing entity and device registry rows in place.
+
+Windmill does not expose a stable hardware identifier. Version 1.1.0 therefore
+uses the Home Assistant config-entry ID as the device identity. The migration
+preserves the existing entity ID, device ID, names, areas, automations, and
+recorder history. Deleting and recreating the config entry creates a new
+identity.
 
 2024-09: Replaced deprecated Home Assistant call `async_forward_entry_setups` with the recommended `async_setup_platforms` in `__init__.py` (see HA June 2024 dev blog).
 

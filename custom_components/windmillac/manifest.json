@@ -3,10 +3,10 @@
   "name": "WindmillAC",
   "codeowners": ["@bzellman"],
   "config_flow": true,
-  "documentation": "https://github.com/bzellman/HACS-WindmillAC",
+  "documentation": "https://github.com/bigl34/WindmillAC",
   "integration_type": "device",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/bzellman/HACS-WindmillAC",
-  "requirements": ["requests", "blynklib"],
-  "version": "1.0.6"
+  "issue_tracker": "https://github.com/bigl34/WindmillAC/issues",
+  "requirements": [],
+  "version": "1.1.0"
 }
