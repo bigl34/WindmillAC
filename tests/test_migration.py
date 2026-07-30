@@ -138,12 +138,8 @@ async def test_migration_fails_closed_on_device_collision(hass: HomeAssistant) -
     )
 
     assert await async_migrate_entry(hass, entry) is False
-    assert er.async_get(hass).async_get(legacy_entity.entity_id).unique_id.endswith(
-        "_windmill_AC"
-    )
-    assert dr.async_get(hass).async_get(legacy_device.id).identifiers != {
-        (DOMAIN, entry.entry_id)
-    }
+    assert er.async_get(hass).async_get(legacy_entity.entity_id).unique_id.endswith("_windmill_AC")
+    assert dr.async_get(hass).async_get(legacy_device.id).identifiers != {(DOMAIN, entry.entry_id)}
     assert entry.version == 1
 
 
