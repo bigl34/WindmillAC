@@ -228,6 +228,23 @@ async def test_older_refresh_cannot_overwrite_a_later_command(
 
 
 @pytest.mark.asyncio
+async def test_fractional_native_temperature_is_rounded_for_integer_pin(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api = FakeApi([])
+    coordinator = WindmillDataUpdateCoordinator(hass, config_entry, api)
+    refresh = AsyncMock()
+    monkeypatch.setattr(coordinator, "async_request_refresh", refresh)
+
+    await coordinator.async_set_target_temperature(60.98)
+
+    assert api.writes == [{"V2": "61"}]
+    refresh.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_write_auth_failure_requests_linked_reauthentication(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,

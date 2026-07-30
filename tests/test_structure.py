@@ -14,7 +14,7 @@ def test_manifest_and_hacs_metadata_target_supported_versions() -> None:
     manifest = json.loads((COMPONENT / "manifest.json").read_text())
     hacs = json.loads((ROOT / "hacs.json").read_text())
 
-    assert manifest["version"] == "1.1.0"
+    assert manifest["version"] == "1.1.1"
     assert manifest["requirements"] == []
     assert hacs["homeassistant"] == "2026.7.0"
 

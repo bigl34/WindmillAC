@@ -2,7 +2,6 @@
 
 NAME = "WindmillAC"
 DOMAIN = "windmillac"
-VERSION = "1.1.0"
 PLATFORMS = ["climate"]
 UPDATE_INTERVAL = 60
 CONF_TOKEN = "token"

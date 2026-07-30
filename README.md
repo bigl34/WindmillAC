@@ -106,10 +106,14 @@ This might occur if something wasn't right the first time you added the device. 
 
 ## Support & Contributing
 
-This is a community-maintained integration (v1). The developer welcomes community support, feedback, and contributions. For issues or feature requests, please use the [GitHub Issues](https://github.com/bzellman/WindmillAC/issues) page.
+This is a community-maintained integration (v1). The developer welcomes community support, feedback, and contributions. For issues or feature requests, please use the [GitHub Issues](https://github.com/bigl34/WindmillAC/issues) page.
 
 ## Disclaimer
 ## Notes / Changelog
+
+2026-07: Version 1.1.1 rounds Home Assistant's converted target temperature
+to the integer Fahrenheit value required by Windmill and exposes the appliance's
+real 50–100 °F target range.
 
 2026-07: Version 1.1.0 moves all cloud access to Home Assistant's shared
 asynchronous HTTP session, adds bounded read retries and stale-state handling,

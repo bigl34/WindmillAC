@@ -22,6 +22,10 @@ class WindmillClimate(
 
     _attr_has_entity_name = True
     _attr_temperature_unit = UnitOfTemperature.FAHRENHEIT
+    _attr_min_temp = 50
+    # HA displays 100 °F as 37.8 °C and converts it back to 100.04 °F.
+    # Keep a small validation tolerance so the displayed maximum is selectable.
+    _attr_max_temp = 100.1
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.FAN_MODE

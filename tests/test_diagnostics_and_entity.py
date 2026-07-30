@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
-from homeassistant.components.climate import ClimateEntityDescription
+from homeassistant.components.climate import (
+    ClimateEntityDescription,
+    async_service_temperature_set,
+)
 from homeassistant.components.climate.const import HVACMode
-from homeassistant.core import HomeAssistant
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
+from homeassistant.core import HomeAssistant, ServiceCall
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.windmillac.api import WindmillSnapshot
@@ -68,5 +73,40 @@ def test_entity_uses_entry_identity_and_exposes_stale_attribute() -> None:
 
     assert entity.unique_id == f"{entry_id}-climate"
     assert entity.device_info["identifiers"] == {(DOMAIN, entry_id)}
+    assert entity.min_temp == 50
+    assert entity.max_temp == 100.1
     assert entity.extra_state_attributes == {"stale": True}
     assert entity.available is True
+
+
+@pytest.mark.asyncio
+async def test_celsius_display_max_converts_within_device_tolerance(
+    hass: HomeAssistant,
+) -> None:
+    """The displayed 37.8 °C maximum must remain selectable."""
+    assert hass.config.units.temperature_unit == UnitOfTemperature.CELSIUS
+    coordinator = SimpleNamespace(
+        data=coordinator_data(stale=False),
+        last_update_success=True,
+        async_add_listener=lambda *_args: lambda: None,
+        async_set_target_temperature=AsyncMock(),
+    )
+    entity = WindmillClimate(
+        coordinator,
+        "test-entry-id",
+        ClimateEntityDescription(key="climate", name="Windmill AC"),
+    )
+    entity.hass = hass
+
+    await async_service_temperature_set(
+        entity,
+        ServiceCall(
+            hass,
+            "climate",
+            "set_temperature",
+            {ATTR_TEMPERATURE: 37.8},
+        ),
+    )
+
+    native_target = coordinator.async_set_target_temperature.await_args.args[0]
+    assert native_target == pytest.approx(100.04)

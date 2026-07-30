@@ -92,7 +92,7 @@ class WindmillDataUpdateCoordinator(DataUpdateCoordinator[WindmillCoordinatorDat
 
     async def async_set_target_temperature(self, temperature: float) -> None:
         """Set the target temperature and reconcile state."""
-        await self._async_write_and_refresh({"V2": _format_number(temperature)})
+        await self._async_write_and_refresh({"V2": _format_target_temperature(temperature)})
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set power and mode, batching power-on with the selected mode."""
@@ -133,7 +133,7 @@ class WindmillDataUpdateCoordinator(DataUpdateCoordinator[WindmillCoordinatorDat
         await self.async_request_refresh()
 
 
-def _format_number(value: float) -> str:
-    """Format numeric pin values without unnecessary decimal suffixes."""
+def _format_target_temperature(value: float) -> str:
+    """Round Home Assistant's converted value to Windmill's integer Fahrenheit pin."""
     numeric = float(value)
-    return str(int(numeric)) if numeric.is_integer() else str(numeric)
+    return str(int(numeric + 0.5))
