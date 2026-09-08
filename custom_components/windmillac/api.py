@@ -141,9 +141,13 @@ class WindmillApiClient:
             except WindmillAuthError:
                 raise
             except (TimeoutError, ClientError, WindmillTransientError) as err:
+                # Chain the transport error's type but never its message: an
+                # aiohttp error can render the credential-bearing request URL,
+                # and Home Assistant logs the full traceback.
                 raise WindmillAmbiguousWriteError(
                     "Windmill command outcome is unknown; it was not retried"
-                ) from err
+                    f" ({type(err).__name__})"
+                ) from None
 
     async def _async_read_json(self, endpoint: str) -> Any:
         """Read JSON with one retry for transient failures."""
@@ -200,7 +204,12 @@ class WindmillApiClient:
                     _LOGGER.debug("Transient Windmill read failed; retrying once")
                     await asyncio.sleep(self._retry_delay)
                     continue
-                raise WindmillTransientError("Windmill service is temporarily unavailable") from err
+                # See async_write_pins: the transport error's message may embed
+                # the token, so only its type survives into the raised error.
+                raise WindmillTransientError(
+                    "Windmill service is temporarily unavailable"
+                    f" ({type(err).__name__})"
+                ) from None
 
         raise AssertionError("read retry loop terminated unexpectedly")
 

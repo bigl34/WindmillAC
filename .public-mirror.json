@@ -4,5 +4,5 @@
   "item": "windmillac-home-assistant",
   "history_policy": "incremental-only",
   "actions_policy": "safe-workflows-only",
-  "public_branch": "master"
+  "public_branch": "main"
 }
